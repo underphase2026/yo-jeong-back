@@ -732,38 +732,42 @@ export class AgencyService {
   ): Promise<getPriceListByPhoneResDto> {
     if (!agency) throw new UnauthorizedException('Agency payload is missing.');
 
-    // 1. 대리점 확인
+    // 1. 대리점 조회 (delete_time: IsNull 적용)
     const agencyForSearch = await this.agencyRepository.findOne({
-      where: {
-        id: agency.payload.id,
-        delete_time: IsNull(),
-      }, // DB 환경에 따라 IsNull() 고려
+      where: { id: agency.payload.id, delete_time: IsNull() },
     });
     if (!agencyForSearch) throw new NotFoundException('Agency not found.');
 
     const { phone_name } = dto;
 
-    // 2. 휴대폰 확인
+    // 2. 휴대폰 조회
+    // 서버 환경에서는 'iPhone'과 'iphone'을 다르게 인식할 수 있으니 주의가 필요합니다.
     const phoneForSearch = await this.phoneRepository.findOne({
       where: { name: phone_name },
     });
-    if (!phoneForSearch) throw new NotFoundException('Phone not found.');
-    console.log(phoneForSearch);
 
-    // 3. 해당 조건의 모든 가격 리스트를 한 번에 가져오기 (성능 최적화)
+    if (!phoneForSearch) {
+      console.error(`[Error] Phone not found: ${phone_name}`);
+      throw new NotFoundException('Phone not found.');
+    }
+
+    // 3. 관련 가격 리스트 한 번에 조회 (N+1 문제 해결 및 IsNull 적용)
     const allPriceLists = await this.priceListRepository.find({
       where: {
         agency: { id: agencyForSearch.id },
         phone: { id: phoneForSearch.id },
-        delete_time: IsNull(), // 이 부분이 DB와 맞는지 꼭 확인! ('' vs NULL)
+        delete_time: IsNull(),
       },
       relations: ['telecom', 'rate'],
     });
-    console.log(allPriceLists);
+
+    // 디버깅을 위한 로그 (서버 터미널에서 확인 가능)
+    console.log(
+      `[Debug] Found ${allPriceLists.length} price items for phone: ${phone_name}`,
+    );
 
     const TARGET_TELECOMS = ['SKT', 'KT', 'LG U+'] as const;
     const REQUIRED_TYPES = ['기기변경', '번호이동', '신규가입'] as const;
-
     const priceListResults: PriceSettingFeildProps[] = [];
 
     // 4. 통신사별 루프
@@ -774,15 +778,16 @@ export class AgencyService {
         options: [],
       };
 
-      // 5. 가입유형별 루프
       for (const type of REQUIRED_TYPES) {
-        // 메모리에 가져온 데이터에서 찾기
+        // 메모리 내에서 데이터 찾기
+        // 서버가 리눅스인 경우 문자열 비교 시 공백이나 대소문자를 엄격히 체크하세요.
         const foundPrice = allPriceLists.find(
-          (p) => p.telecom.name === telecomName && p.subscription_type === type,
+          (p) =>
+            p.telecom.name.trim() === telecomName &&
+            p.subscription_type === type,
         );
 
         if (foundPrice) {
-          // 공시지원금 조회 (이 부분은 통신사별로 다르다면 루프 밖에서 미리 가져오는 게 좋음)
           const subsidy_by_telecom =
             await this.subsidyBytTelecomRepository.findOne({
               where: { telecom: telecomName },
@@ -799,7 +804,6 @@ export class AgencyService {
               telecomSubsidyValue,
           });
         } else {
-          // 데이터가 없을 경우 기본값
           currentPriceList.options.push({
             type: type,
             plan: '설정된 가격 없음',
