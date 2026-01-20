@@ -734,7 +734,10 @@ export class AgencyService {
 
     // 1. 대리점 확인
     const agencyForSearch = await this.agencyRepository.findOne({
-      where: { id: agency.payload.id, delete_time: '' }, // DB 환경에 따라 IsNull() 고려
+      where: {
+        id: agency.payload.id,
+        //delete_time: ''
+      }, // DB 환경에 따라 IsNull() 고려
     });
     if (!agencyForSearch) throw new NotFoundException('Agency not found.');
 
@@ -751,7 +754,7 @@ export class AgencyService {
       where: {
         agency: { id: agencyForSearch.id },
         phone: { id: phoneForSearch.id },
-        delete_time: '', // 이 부분이 DB와 맞는지 꼭 확인! ('' vs NULL)
+        //delete_time: '', // 이 부분이 DB와 맞는지 꼭 확인! ('' vs NULL)
       },
       relations: ['telecom', 'rate'],
     });
