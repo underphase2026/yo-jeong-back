@@ -732,106 +732,81 @@ export class AgencyService {
   ): Promise<getPriceListByPhoneResDto> {
     if (!agency) throw new UnauthorizedException('Agency payload is missing.');
 
+    // 1. 대리점 확인
     const agencyForSearch = await this.agencyRepository.findOne({
-      where: { id: agency.payload.id, delete_time: '' },
+      where: { id: agency.payload.id, delete_time: '' }, // DB 환경에 따라 IsNull() 고려
     });
     if (!agencyForSearch) throw new NotFoundException('Agency not found.');
 
-    // const { phone_name } = dto;
-    // const phone_name = '갤럭시S25';
-    const phone_name = dto.phone_name;
+    const { phone_name } = dto;
 
-    console.log('Searching for phone name:', phone_name);
+    // 2. 휴대폰 확인
     const phoneForSearch = await this.phoneRepository.findOne({
-      where: {
-        name: phone_name,
-        // brand: { name: phone_brand, delete_time: '' },
-        // delete_time: '',
-      },
+      where: { name: phone_name },
     });
-    console.log('Search Result:', phoneForSearch);
     if (!phoneForSearch) throw new NotFoundException('Phone not found.');
 
-    const allPriceLists: PriceListEntity[] =
-      await this.priceListRepository.find({
-        where: {
-          agency: { id: agencyForSearch.id },
-          phone: { id: phoneForSearch.id },
-          delete_time: '',
-        },
-        relations: ['telecom', 'rate'],
-      });
-    // console.debug(allPriceLists);
+    // 3. 해당 조건의 모든 가격 리스트를 한 번에 가져오기 (성능 최적화)
+    const allPriceLists = await this.priceListRepository.find({
+      where: {
+        agency: { id: agencyForSearch.id },
+        phone: { id: phoneForSearch.id },
+        delete_time: '', // 이 부분이 DB와 맞는지 꼭 확인! ('' vs NULL)
+      },
+      relations: ['telecom', 'rate'],
+    });
 
-    const TARGET_TELECOMS: ('SKT' | 'KT' | 'LG U+')[] = ['SKT', 'KT', 'LG U+'];
-    const REQUIRED_TYPES: ('기기변경' | '번호이동' | '신규가입')[] = [
-      '기기변경',
-      '번호이동',
-      '신규가입',
-    ];
+    const TARGET_TELECOMS = ['SKT', 'KT', 'LG U+'] as const;
+    const REQUIRED_TYPES = ['기기변경', '번호이동', '신규가입'] as const;
+
     const priceListResults: PriceSettingFeildProps[] = [];
 
+    // 4. 통신사별 루프
     for (const telecomName of TARGET_TELECOMS) {
-      // const telecom = await this.telecomRepository.findOne({
-      //   where: {
-      //     name: telecomName,
-      //     //delete_time: ''
-      //   },
-      // });
-      // if (!telecom) {
-      //   // const telecomExample = new Telecom();
-      //   // telecomExample.name = telecomName;
-      //   // telecomExample.delete_time = '';
-      //   // await this.telecomRepository.save(telecomExample);
-      //   throw new NotFoundException('Telecom not found.');
-      // }
       const currentPriceList: PriceSettingFeildProps = {
         telecom: telecomName,
         device: phone_name,
         options: [],
       };
-      // console.debug(telecomName);
 
+      // 5. 가입유형별 루프
       for (const type of REQUIRED_TYPES) {
-        const option: PriceOption = {
-          type: type,
-          plan: '설정된 가격 없음', // 기본값
-          price: 0, // 기본값
-        };
-        const priceListForSearch = await this.priceListRepository.findOne({
-          where: {
-            agency: { id: agencyForSearch.id },
-            phone: phoneForSearch,
-            telecom: { name: telecomName },
-            subscription_type: type,
-            delete_time: '',
-          },
-          relations: ['rate'],
-        });
-        // console.debug(priceListForSearch);
-        if (priceListForSearch) {
-          const { original_price, subsidy_by_agency } = priceListForSearch;
-          const subsidy_by_telecom: SubsidyByTelecom | null =
+        // 메모리에 가져온 데이터에서 찾기
+        const foundPrice = allPriceLists.find(
+          (p) => p.telecom.name === telecomName && p.subscription_type === type,
+        );
+
+        if (foundPrice) {
+          // 공시지원금 조회 (이 부분은 통신사별로 다르다면 루프 밖에서 미리 가져오는 게 좋음)
+          const subsidy_by_telecom =
             await this.subsidyBytTelecomRepository.findOne({
               where: { telecom: telecomName },
             });
-          if (!subsidy_by_telecom)
-            throw new NotFoundException('Subsidy by telecom not found.');
-          option.price =
-            original_price - subsidy_by_agency - subsidy_by_telecom.value;
-          option.plan = priceListForSearch.rate.name;
+
+          const telecomSubsidyValue = subsidy_by_telecom?.value || 0;
+
+          currentPriceList.options.push({
+            type: type,
+            plan: foundPrice.rate.name,
+            price:
+              foundPrice.original_price -
+              foundPrice.subsidy_by_agency -
+              telecomSubsidyValue,
+          });
+        } else {
+          // 데이터가 없을 경우 기본값
+          currentPriceList.options.push({
+            type: type,
+            plan: '설정된 가격 없음',
+            price: 0,
+          });
         }
-        // console.debug(option);
-
-        currentPriceList.options.push(option);
       }
-
       priceListResults.push(currentPriceList);
     }
 
     const response = new getPriceListByPhoneResDto();
     response.priceList = priceListResults;
-
     return response;
   }
 
