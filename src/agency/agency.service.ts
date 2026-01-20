@@ -736,7 +736,7 @@ export class AgencyService {
     const agencyForSearch = await this.agencyRepository.findOne({
       where: {
         id: agency.payload.id,
-        //delete_time: ''
+        delete_time: IsNull(),
       }, // DB 환경에 따라 IsNull() 고려
     });
     if (!agencyForSearch) throw new NotFoundException('Agency not found.');
@@ -748,16 +748,18 @@ export class AgencyService {
       where: { name: phone_name },
     });
     if (!phoneForSearch) throw new NotFoundException('Phone not found.');
+    console.log(phoneForSearch);
 
     // 3. 해당 조건의 모든 가격 리스트를 한 번에 가져오기 (성능 최적화)
     const allPriceLists = await this.priceListRepository.find({
       where: {
         agency: { id: agencyForSearch.id },
         phone: { id: phoneForSearch.id },
-        //delete_time: '', // 이 부분이 DB와 맞는지 꼭 확인! ('' vs NULL)
+        delete_time: IsNull(), // 이 부분이 DB와 맞는지 꼭 확인! ('' vs NULL)
       },
       relations: ['telecom', 'rate'],
     });
+    console.log(allPriceLists);
 
     const TARGET_TELECOMS = ['SKT', 'KT', 'LG U+'] as const;
     const REQUIRED_TYPES = ['기기변경', '번호이동', '신규가입'] as const;
