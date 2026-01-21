@@ -67,6 +67,8 @@ import { checkIsUserVisitResDto } from './dto/checkIsUserVisit.res.dto';
 import { checkLoginReqDto } from './dto/checkLogin.req.dto';
 import { checkLoginResDto } from './dto/checkLogin.res.dto';
 import { app } from 'firebase-admin';
+import { getPhoneDetailResDto } from './dto/getPhoneDetail.res.dto';
+import { getPhoneDetailReqDto } from './dto/getPhoneDetail.req.dto';
 
 interface PriceListEntity {
   id: number;
@@ -906,6 +908,7 @@ export class AgencyService {
 
     return response;
   }
+
   async enrollPriceListDetail(
     dto: enrollPriceListDetailReqDto,
     agency: payloadClass,
@@ -988,6 +991,27 @@ export class AgencyService {
     }
 
     const response = new enrollPriceListResDto();
+
+    return response;
+  }
+
+  async getPhoneDetail(
+    dto: getPhoneDetailReqDto,
+    agency: payloadClass,
+  ): Promise<getPhoneDetailResDto> {
+    const new_agency = new Agency();
+    new_agency.id = agency.payload.id;
+
+    const phone = await this.phoneRepository.findOne({
+      where: {
+        name: dto.phone_name,
+        delete_time: '',
+      },
+    });
+    if (!phone) throw new NotFoundException();
+
+    const response = new getPhoneDetailResDto();
+    response.original_price = phone.price;
 
     return response;
   }

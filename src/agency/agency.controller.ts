@@ -66,6 +66,8 @@ import { checkIsUserVisitReqDto } from './dto/checkIsUserVisit.req.dto';
 import { checkIsUserVisitResDto } from './dto/checkIsUserVisit.res.dto';
 import { checkLoginReqDto } from './dto/checkLogin.req.dto';
 import { checkLoginResDto } from './dto/checkLogin.res.dto';
+import { getPhoneDetailResDto } from './dto/getPhoneDetail.res.dto';
+import { getPhoneDetailReqDto } from './dto/getPhoneDetail.req.dto';
 
 @Controller('agency')
 export class AgencyController {
@@ -397,6 +399,25 @@ export class AgencyController {
   ): Promise<enrollPriceListDetailResDto> {
     const agency: payloadClass = req['agency'];
     return this.agencyService.enrollPriceListDetail(dto, agency);
+  }
+
+  @Get('getPhoneDetail')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '기기 상세 조회' })
+  @ApiResponse({
+    status: 201,
+    description: '조회 성공',
+    type: getPhoneDetailResDto,
+  })
+  @ApiBadRequestResponse({ description: '조회 실패' })
+  @ApiNotFoundResponse({ description: '없음' })
+  @UseGuards(AuthGuard)
+  getPhoneDetail(
+    @Query() dto: getPhoneDetailReqDto,
+    @Req() req: Request,
+  ): Promise<getPhoneDetailResDto> {
+    const agency: payloadClass = req['agency'];
+    return this.agencyService.getPhoneDetail(dto, agency);
   }
 
   @Post('checkIsUserVisit')
