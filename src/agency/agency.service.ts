@@ -851,7 +851,7 @@ export class AgencyService {
       relations: ['telecom', 'rate'],
     });
 
-    const TARGET_TELECOMS = ['SKT', 'KT', 'LG U+'] as const;
+    const TARGET_TELECOMS = ['SKT', 'KT', 'LG U'] as const;
     const REQUIRED_TYPES = ['기기변경', '번호이동', '신규가입'] as const;
     const priceListResults: PriceSettingFeildProps[] = [];
 
