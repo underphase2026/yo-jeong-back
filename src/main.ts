@@ -47,6 +47,7 @@ async function bootstrap() {
       'http://localhost:3001',
       'https://yo-jeong.com',
       'https://www.yo-jeong.com', // www 도메인 반드시 포함
+      'https://admin.yo-jeong.com',
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
