@@ -39,20 +39,26 @@ async function bootstrap() {
       );
     }
   }
-  const app = await NestFactory.create(AppModule, { cors: true });
+  //const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
+
+  // 2. 주석 처리되었던 whitelist와 enableCors의 봉인을 풉니다.
   const whitelist = ['http://localhost:3001', 'https://yo-jeong.com'];
-  // app.enableCors({
-  //   origin: function (origin, callback) {
-  //     if (!origin || whitelist.indexOf(origin) !== -1) {
-  //       callback(null, true);
-  //     } else {
-  //       callback(new Error('Not allowed by CORS'));
-  //     }
-  //   },
-  //   allowedHeaders: '*',
-  //   methods: 'GET,PUT,PATCH,POST,DELETE,UPDATE,OPTIONS',
-  //   credentials: true,
-  // });
+
+  app.enableCors({
+    origin: function (origin, callback) {
+      if (!origin || whitelist.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    allowedHeaders: 'Content-Type, Accept, Authorization', // 허용할 헤더 명시
+    methods: 'GET,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    // 💡 속도를 위해 maxAge를 다시 추가하는 것을 강력 추천합니다!
+    maxAge: 86400,
+  });
   const config = new DocumentBuilder()
     .setTitle('Under Phase API')
     .setDescription('The Under Phase API description')
