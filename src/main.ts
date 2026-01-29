@@ -2,22 +2,21 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
-import * as admin from 'firebase-admin'; // 👈 Firebase Admin SDK 임포트
-import * as path from 'path'; // path와 fs는 더 이상 사용하지 않지만 일단 남겨둡니다.
+import * as admin from 'firebase-admin';
+import * as path from 'path';
 import * as fs from 'fs';
 import { cwd } from 'process';
 
 async function bootstrap() {
   // ----------------------------------------------------
-  // 🔑 Firebase Admin SDK 초기화 로직 수정
+  // 🔑 Firebase Admin SDK 초기화 로직
   // ----------------------------------------------------
   if (admin.apps.length === 0) {
     try {
-      // 1. 환경 변수에서 JSON 객체 구성
       const config = {
         type: process.env.type,
         project_id: process.env.project_id,
-        private_key_id: process.env.private_key_id, // ⚠️ 핵심 수정: private_key 내의 \n 문자열을 실제 개행 문자로 치환
+        private_key_id: process.env.private_key_id,
         private_key: process.env.private_key?.replace(/\\n/g, '\n'),
         client_email: process.env.client_email,
         client_id: process.env.client_id,
@@ -28,31 +27,42 @@ async function bootstrap() {
         universe_domain: process.env.universe_domain,
       };
       admin.initializeApp({
-        credential: admin.credential.cert(config as admin.ServiceAccount), // config 객체 자체를 사용
+        credential: admin.credential.cert(config as admin.ServiceAccount),
       });
       console.log('✅ Firebase Admin SDK initialized successfully in main.ts.');
     } catch (e) {
       console.error('❌ Firebase Admin SDK initialization critical failure:');
       console.error(`Error details: ${e.message}`);
-      console.error(
-        '환경 변수가 올바르게 설정되었는지, 특히 private_key가 정확한지 확인하세요.',
-      );
     }
   }
-  const app = await NestFactory.create(AppModule, { cors: true });
+
+  // CORS 설정을 세부적으로 제어하기 위해 기본 { cors: true } 대신 enableCors를 사용합니다.
+  const app = await NestFactory.create(AppModule);
+
+  // ----------------------------------------------------
+  // 🚀 CORS 최적화 설정 (속도 개선 핵심)
+  // ----------------------------------------------------
   const whitelist = ['http://localhost:3001', 'https://yo-jeong.com'];
-  // app.enableCors({
-  //   origin: function (origin, callback) {
-  //     if (!origin || whitelist.indexOf(origin) !== -1) {
-  //       callback(null, true);
-  //     } else {
-  //       callback(new Error('Not allowed by CORS'));
-  //     }
-  //   },
-  //   allowedHeaders: '*',
-  //   methods: 'GET,PUT,PATCH,POST,DELETE,UPDATE,OPTIONS',
-  //   credentials: true,
-  // });
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // whitelist에 있거나 origin이 없는 경우(Postman 등) 허용
+      if (!origin || whitelist.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    // 💡 핵심: OPTIONS 요청 결과를 24시간 동안 브라우저에 저장합니다.
+    // 140ms나 걸리는 Preflight 요청 횟수를 획기적으로 줄여줍니다.
+    maxAge: 86400,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('Under Phase API')
     .setDescription('The Under Phase API description')
@@ -61,6 +71,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
   app.useGlobalPipes(new ValidationPipe());
 
   await app.listen(process.env.PORT ?? 3000);
