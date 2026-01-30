@@ -1085,7 +1085,9 @@ export class AgencyService {
       await this.priceListRepository.save(priceListForSearch);
     }
 
-    return new enrollPriceListResDto();
+    const response = new enrollPriceListDetailResDto();
+
+    return response;
   }
 
   async getPhoneDetail(
