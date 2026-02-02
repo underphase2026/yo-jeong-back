@@ -30,7 +30,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { agencyRegisterResDto } from './dto/agencyRegister.res.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Seller } from 'src/entity/Seller.entity';
-import { IsNull, Not, Repository } from 'typeorm';
+import { IsNull, MoreThanOrEqual, Not, Repository } from 'typeorm';
 import { Agency } from 'src/entity/Agency.entity';
 import { PriceList } from 'src/entity/PriceList.entity';
 import { Phone } from 'src/entity/Phone.entity';
@@ -672,7 +672,11 @@ export class AgencyService {
     if (!agencyForSearch)
       throw new UnauthorizedException('판매점 정보를 찾을 수 없습니다.');
 
-    // 2. 인증 코드(auth_code)로 특정 견적서 조회
+    // 2. 24시간 전 시간 계산
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    // 3. 인증 코드(auth_code)로 특정 견적서 조회 (24시간 이내, 오래된 순)
     const estimateData = await this.estimateRepository.findOne({
       where: {
         auth_code: dto.auth_code, // ★ DTO에서 받은 인증 코드를 조건에 추가
@@ -680,6 +684,7 @@ export class AgencyService {
           agency: { id: agencyForSearch.id },
         },
         delete_time: '',
+        create_time: MoreThanOrEqual(twentyFourHoursAgo), // ★ 24시간 필터
       },
       relations: [
         'kakaoUser',
@@ -689,6 +694,9 @@ export class AgencyService {
         'phone.brand',
         'priceList.telecom',
       ],
+      order: {
+        create_time: 'ASC', // ★ 오래된 순 정렬
+      },
     });
 
     // 데이터가 없으면 404 반환
