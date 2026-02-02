@@ -555,7 +555,7 @@ export class UserService {
 
   async getQuote(dto: getQuoteReqDto): Promise<getQuoteResDto> {
     const estimate = await this.estimateRepository.findOne({
-      where: { auth_code: dto.quoteCode },
+      where: { auth_code: dto.quoteCode, delete_time: '' },
       relations: [
         'priceList',
         'priceList.agency',
@@ -584,6 +584,8 @@ export class UserService {
     const brand = phone.brand;
 
     response.customer_name = estimate.kakaoUser.name;
+
+    response.quote_code = estimate.auth_code;
 
     response.agency_id = agency.id;
     response.agency_name = agency.name;

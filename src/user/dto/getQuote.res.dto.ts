@@ -39,6 +39,14 @@ export class getQuoteResDto {
   })
   customer_name: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: '견적 코드',
+    example: '1234567890',
+  })
+  quote_code: string;
+
   @IsNumber()
   @IsNotEmpty()
   @ApiProperty({
