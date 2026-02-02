@@ -584,6 +584,7 @@ export class UserService {
 
     response.customer_name = estimate.kakaoUser.name;
 
+    response.agency_id = agency.id;
     response.agency_name = agency.name;
     response.agency_rating = agency.review_score;
     response.agency_address = agency.address;
@@ -591,6 +592,7 @@ export class UserService {
     response.agency_longitude = agency.longitude;
     response.agency_phone_number = agency.phone_number;
 
+    response.telecom = priceList.telecom.name;
     response.phone_name = phone.name;
     response.phone_brand = brand.name;
     response.phone_price = estimate.price;

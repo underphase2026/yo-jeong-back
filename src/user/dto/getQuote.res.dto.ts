@@ -39,6 +39,14 @@ export class getQuoteResDto {
   })
   customer_name: string;
 
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: '판매점 ID',
+    example: 1,
+  })
+  agency_id: number;
+
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
@@ -85,6 +93,14 @@ export class getQuoteResDto {
     example: '0511234567',
   })
   agency_phone_number: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: '통신사 명',
+    example: 'SKT',
+  })
+  telecom: string;
 
   @IsString()
   @IsNotEmpty()
