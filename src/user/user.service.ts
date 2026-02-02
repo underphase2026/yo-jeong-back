@@ -307,239 +307,95 @@ export class UserService {
     const {
       agency_id,
       phone_name,
-      phone_brand,
-      phone_price,
-      phone_plan,
       subscription_type,
       customer_name,
+      telecom: telecomName,
+      phone_plan,
     } = dto;
+
     const { kakaoId, email, firebaseUid } = kakaoUser;
-    const kakaoUserData = await this.kakaoUserRepository.findOne({
+
+    // 1. 사용자 조회 또는 생성
+    let kakaoUserData = await this.kakaoUserRepository.findOne({
       where: { email: email, delete_time: '' },
     });
 
     if (!kakaoUserData) {
-      console.debug('🚨 DB에 사용자 정보 없음. OIDC API 호출 및 저장 시도...');
+      console.debug('🚨 DB에 사용자 정보 없음. 저장 시도...');
+      const newUser = new KakaoUser();
 
       try {
+        // OIDC 정보 가져오기 시도
         const oidcUserInfo =
           await this.userAuthService.getKakaoOidcUserInfo(token);
-        console.debug(oidcUserInfo);
-
-        const newUser = new KakaoUser();
         newUser.kakaoId = oidcUserInfo.sub;
         newUser.email = oidcUserInfo.email ?? email;
-        newUser.firebaseUid = firebaseUid;
-        newUser.delete_time = '';
         newUser.name = customer_name;
-
-        await this.kakaoUserRepository.save(newUser);
-        console.debug('✅ 새로운 카카오 사용자 DB에 OIDC 정보로 저장 완료.');
       } catch (error) {
-        console.error(
-          'OIDC API 호출 실패. Guard 정보로 대체 저장 시도:',
-          error.message,
-        );
-
-        const newUser = new KakaoUser();
+        console.error('OIDC API 호출 실패. Guard 정보로 대체:', error.message);
         newUser.kakaoId = kakaoId;
         newUser.email = email;
-        newUser.firebaseUid = firebaseUid;
-        newUser.delete_time = '';
-
-        await this.kakaoUserRepository.save(newUser);
-        console.debug(
-          '✅ 새로운 카카오 사용자 DB에 Guard 정보로 대체 저장 완료.',
-        );
       }
-    } else {
-      console.debug('✅ DB에 사용자 정보 존재. 견적서 등록 계속.');
+
+      newUser.firebaseUid = firebaseUid;
+      newUser.delete_time = '';
+      // 중요: 새로 저장한 객체를 다시 할당해야 함
+      kakaoUserData = await this.kakaoUserRepository.save(newUser);
+      console.debug('✅ 새로운 카카오 사용자 저장 완료.');
     }
-    // if (!kakaoUserData) {
-    //   console.debug('🚨 DB에 사용자 정보 없음. Guard Payload로 저장 시도...');
 
-    //   try {
-    //     // 💡 이전에 OIDC API를 호출하는 로직을 제거하고,
-    //     // Guard에서 받은 kakaoUser 정보를 사용하여 Entity 생성
+    // 2. 필수 연관 데이터 조회 (Promise.all로 병렬 처리 권장)
+    const [telecom, phone, agency] = await Promise.all([
+      this.telecomRepository.findOne({
+        where: { name: telecomName, delete_time: '' },
+      }),
+      this.phoneRepository.findOne({
+        where: { name: phone_name, delete_time: '' },
+      }),
+      this.agencyRepository.findOne({
+        where: { id: agency_id, delete_time: '' },
+      }),
+    ]);
 
-    //     const newUser = new KakaoUser();
-    //     newUser.kakaoId = kakaoUser.kakaoId;
-    //     newUser.email = kakaoUser.email;
-    //     newUser.firebaseUid = kakaoUser.firebaseUid;
-    //     newUser.delete_time = '';
+    if (!telecom) throw new NotFoundException('Telecom NotFound');
+    if (!phone) throw new NotFoundException('Phone NotFound');
+    if (!agency) throw new NotFoundException('Agency NotFound');
 
-    //     await this.kakaoUserRepository.save(newUser);
-    //     console.debug('✅ 새로운 카카오 사용자 DB에 Guard 정보로 저장 완료.');
-    //   } catch (error) {
-    //     // DB 저장 실패 시의 예외 처리 (예: 중복 키 오류 등)
-    //     console.error('사용자 DB 저장 실패:', error.message);
-    //     // 필요하다면 여기서 throw 처리
-    //     throw new InternalServerErrorException('사용자 정보 저장 중 오류 발생');
-    //   }
-    // } else {
-    //   console.debug('✅ DB에 사용자 정보 존재. 견적서 등록 계속.');
-    // }
-
-    // findOne KakaoUser 해야 함.
-
-    // const agency = await this.agencyRepository.findOne({
-    //   where: { id: agency_id },
-    // });
-    // if (!agency) throw new NotFoundException();
-    // //console.log(agency);
-
-    // const phone = await this.phoneRepository.findOne({
-    //   where: { name: phone_name, brand: { name: phone_brand } },
-    // });
-    // if (!phone) throw new NotFoundException();
-    // //console.log(phone);
-
-    // const telecom = await this.telecomRepository.findOne({
-    //   where: { name: dto.telecom },
-    // });
-    // if (!telecom) throw new NotFoundException();
-    // //console.log(telecom);
-
-    // // // rate 더미 데이터 삽입
-    // // // const newRate = new Rate();
-    // // // newRate.name = phone_plan.name;
-    // // // newRate.price = phone_plan.price;
-    // // // newRate.telecom = telecom;
-    // // // newRate.data = 200;
-    // // // newRate.delete_time = '';
-    // // // await this.rateRepository.save(newRate);
-
-    // const rate = await this.rateRepository.findOne({
-    //   where: {
-    //     name: phone_plan.name,
-    //     price: phone_plan.price,
-    //     telecom: { id: telecom.id },
-    //   },
-    // });
-    // if (!rate) throw new NotFoundException();
-    // //console.log(rate);
-
-    // const priceList = await this.priceListRepository.findOne({
-    //   where: {
-    //     agency: { id: agency_id },
-    //     phone: { id: phone.id },
-    //     subscription_type: subscription_type,
-    //     telecom: { id: telecom.id },
-    //   },
-    //   relations: ['agency', 'phone', 'telecom', 'phone.brand', 'telecom'],
-    // });
-    // if (!priceList) throw new NotFoundException();
-    // // //console.log(priceList);
-
-    // const authCode = this.generateNumericCode(10);
-    // const auth_code: string = await authCode;
-
-    // if (!kakaoUserData) throw new NotFoundException();
-
-    // const estimate = new Estimate();
-    // estimate.phone = phone;
-    // estimate.priceList = priceList;
-    // estimate.price = phone_price;
-    // estimate.rate = rate.price;
-    // estimate.auth_code = auth_code;
-    // estimate.subscription_type = subscription_type;
-    // estimate.delete_time = '';
-    // estimate.is_user_visit = false;
-    // estimate.kakaoUser = kakaoUserData;
-
-    // await this.estimateRepository.save(estimate);
-
-    // const response = new resisterQuoteResDto();
-    // response.quote_code = auth_code;
-    if (!kakaoUserData) throw new NotFoundException('kakaoUser NotFound');
-    console.debug(kakaoUserData);
-
-    const telecom = await this.telecomRepository.findOne({
-      where: { name: dto.telecom, delete_time: '' },
-    });
-    if (!telecom) throw new NotFoundException();
-
-    // const rateForSearch = await this.rateRepository.findOne({
-    //   where: { name: dto.phone_plan.name, delete_time: '' },
-    // });
-    // if (!rateForSearch) {
-    //   const rate = new Rate();
-    //   rate.name = dto.phone_plan.name;
-    //   rate.price = dto.phone_plan.price;
-    //   rate.data = 200;
-    //   rate.telecom = telecom;
-    //   rate.delete_time = '';
-    //   await this.rateRepository.save(rate);
-    // }
-    // // const rate = new Rate();
-    // // rate.name = dto.phone_plan.name;
-    // // rate.price = dto.phone_plan.price;
-    // // rate.data = 200;
-    // // rate.telecom = telecom;
-    // // rate.delete_time = '';
-    // // await this.rateRepository.save(rate);
-    // // console.debug(rate);
-    // const rate = await this.rateRepository.findOne({
-    //   where: { name: dto.phone_plan.name, delete_time: '' },
-    // });
-    // if (!rate) throw new NotFoundException('norate');
-    // console.debug(rate);
-
-    const phone = await this.phoneRepository.findOne({
+    // 3. PriceList 조회 (조건을 구체화해야 정확한 가격이 나옵니다)
+    const priceList = await this.priceListRepository.findOne({
       where: {
-        name: dto.phone_name,
-        // brand: { name: dto.phone_brand, delete_time: '' },
+        phone: { id: phone.id },
+        agency: { id: agency.id },
+        telecom: { id: telecom.id },
+        subscription_type: subscription_type,
         delete_time: '',
       },
     });
-    if (!phone) throw new NotFoundException('Phone NotFound');
-    console.debug(phone);
-    const agency = await this.agencyRepository.findOne({
-      where: { id: agency_id, delete_time: '' },
-    });
-    if (!agency) throw new NotFoundException('Agency NotFound');
-    console.debug(agency);
-    console.debug(telecom);
 
-    const priceList = await this.priceListRepository.findOne({
-      where: {
-        phone: { name: dto.phone_name },
-        // agency: { id: agency.id },
-        // telecom: { id: telecom.id },
-        // rate: { name: dto.phone_plan.name },
-        // subscription_type: dto.subscription_type,
-        // delete_time: '',
-      },
-    });
-    if (!priceList) throw new NotFoundException('PriceList NotFound');
-    console.debug(priceList);
+    if (!priceList)
+      throw new NotFoundException('해당 조건의 PriceList를 찾을 수 없습니다.');
 
+    // 4. 견적서(Estimate) 생성 및 저장
     const estimateEntity = new Estimate();
+
+    // 만약 generateNumericCode가 비동기라면 await를 붙여주세요.
+    const code = this.generateNumericCode(10);
+
     estimateEntity.price = priceList.price;
-    estimateEntity.rate = 115000;
-    const code: string = this.generateNumericCode(10);
+    estimateEntity.rate = phone_plan.price; // 하드코딩(115000) 대신 DTO 값 사용 권장
     estimateEntity.auth_code = code;
     estimateEntity.phone = phone;
     estimateEntity.priceList = priceList;
-    estimateEntity.subscription_type = dto.subscription_type;
+    estimateEntity.subscription_type = subscription_type;
     estimateEntity.kakaoUser = kakaoUserData;
     estimateEntity.is_user_visit = false;
     estimateEntity.delete_time = '';
+
     await this.estimateRepository.save(estimateEntity);
 
-    // const estimateData = await this.estimateRepository.findOne({
-    //   where: {
-    //     // phone: phone,
-    //     // priceList: priceList,
-    //     kakaoUser: { id: kakaoUserData.id },
-    //     // subscription_type: dto.subscription_type,
-    //     delete_time: '',
-    //   },
-    // });
-    // if (!estimateData) throw new NotFoundException('Estimate NotFound');
+    // 5. 응답 반환
     const response = new resisterQuoteResDto();
     response.quote_code = estimateEntity.auth_code;
-    // response.quote_code = '1872536263';
 
     return response;
   }
