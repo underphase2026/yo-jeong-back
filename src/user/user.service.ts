@@ -559,6 +559,7 @@ export class UserService {
       relations: [
         'priceList',
         'priceList.agency',
+        'priceList.telecom',
         'phone',
         'priceList.rate',
         'phone.brand',
