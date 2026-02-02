@@ -1,9 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsString, IsArray } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 
-// 개별 견적서 정보 클래스
-export class QuoteDetailItem {
+export class getQuoteDetailResDto {
   @IsBoolean()
   @IsNotEmpty()
   @ApiProperty({
@@ -19,6 +17,13 @@ export class QuoteDetailItem {
     example: '박찬민',
   })
   customer_name: string;
+
+  // @IsString()
+  // @IsNotEmpty()
+  // @ApiProperty({
+  //     description:'고객 전화번호'
+  //   })
+  // customer_phone_number: string;
 
   @IsString()
   @IsNotEmpty()
@@ -68,32 +73,19 @@ export class QuoteDetailItem {
   })
   subscription_type: string;
 
+  @IsString()
+  @IsNotEmpty()
   @ApiProperty({
     description: '공통지원금',
     example: 500000,
   })
   subsidy_by_telecom: number;
 
+  @IsString()
+  @IsNotEmpty()
   @ApiProperty({
     description: '추가 지원금',
     example: 300000,
   })
   subsidy_by_agency: number;
-
-  @ApiProperty({
-    description: '생성 시간',
-    example: '2023-01-01T00:00:00.000Z',
-  })
-  create_time: Date;
-}
-
-// 배열 응답 DTO
-export class getQuoteDetailResDto {
-  @IsArray()
-  @Type(() => QuoteDetailItem)
-  @ApiProperty({
-    description: '견적서 목록 (24시간 이내, 오래된 순 정렬)',
-    type: [QuoteDetailItem],
-  })
-  quotes: QuoteDetailItem[];
 }

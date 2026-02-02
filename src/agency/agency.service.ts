@@ -51,10 +51,7 @@ import { getStatusQuoteReqDto } from './dto/getStatusQuote.req.dto';
 import { getStatusQuoteResDto } from './dto/getStatusQuote.res.dto';
 import { Estimate } from 'src/entity/Estimate.entity';
 import { getQuoteDetailReqDto } from './dto/getQuoteDetail.req.dto';
-import {
-  getQuoteDetailResDto,
-  QuoteDetailItem,
-} from './dto/getQuoteDetail.res.dto';
+import { getQuoteDetailResDto } from './dto/getQuoteDetail.res.dto';
 import { KakaoUser } from 'src/entity/KakaoUser.entity';
 import { ifError } from 'assert';
 import { getPriceListByPhoneReqDto } from './dto/getPriceListByPhone.req.dto';
@@ -679,10 +676,10 @@ export class AgencyService {
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-    // 3. 해당 판매점의 모든 견적서 조회 (24시간 이내, 오래된 순)
-    const estimateList = await this.estimateRepository.find({
+    // 3. 인증 코드(auth_code)로 특정 견적서 조회 (24시간 이내, 오래된 순)
+    const estimateData = await this.estimateRepository.findOne({
       where: {
-        auth_code: dto.auth_code, // ★ DTO에서 받은 인증 코드를 조건에 추가
+        auth_code: dto.auth_code,
         priceList: {
           agency: { id: agencyForSearch.id },
         },
@@ -703,37 +700,40 @@ export class AgencyService {
       },
     });
 
-    // 4. 각 견적서에 대해 통신사 지원금을 조회하고 응답 배열 생성
-    const quotes = await Promise.all(
-      estimateList.map(async (estimateData) => {
-        // 통신사 공시지원금 조회
-        const subsidy_by_telecom =
-          await this.subsidyBytTelecomRepository.findOne({
-            where: {
-              telecom: estimateData.priceList.telecom.name,
-            },
-          });
+    // 데이터가 없으면 404 반환
+    if (!estimateData) {
+      console.error(
+        `Estimate not found. AgencyID: ${agencyForSearch.id}, AuthCode: ${dto.auth_code}`,
+      );
+      throw new NotFoundException(
+        '해당 인증 코드와 일치하는 견적서가 없습니다.',
+      );
+    }
 
-        const quote = new QuoteDetailItem();
-        quote.is_phone_activate = estimateData.is_user_visit;
-        quote.customer_name = estimateData.kakaoUser?.name || '정보 없음';
-        quote.customer_email = estimateData.kakaoUser?.email || '정보 없음';
-        quote.phone_brand = estimateData.phone?.brand?.name || '정보 없음';
-        quote.phone_name = estimateData.phone?.name || '정보 없음';
-        quote.phone_volume = estimateData.phone?.volume || '';
-        quote.phone_plan_name = estimateData.priceList?.rate?.name || '정보 없음';
-        quote.subscription_type = estimateData.subscription_type;
-        quote.subsidy_by_telecom = subsidy_by_telecom?.value || 0;
-        quote.subsidy_by_agency = estimateData.priceList.discount_price;
-        quote.create_time = estimateData.create_time;
+    // 4. 통신사 공시지원금 조회
+    const subsidy_by_telecom = await this.subsidyBytTelecomRepository.findOne({
+      where: {
+        telecom: estimateData.priceList.telecom.name,
+      },
+    });
 
-        return quote;
-      }),
-    );
+    // 지원금 정보가 없을 경우 404 또는 기본값 처리
+    if (!subsidy_by_telecom) {
+      throw new NotFoundException('통신사 지원금 정보를 찾을 수 없습니다.');
+    }
 
-    // 5. 응답 DTO 생성
+    // 5. 응답 DTO 매핑
     const response = new getQuoteDetailResDto();
-    response.quotes = quotes;
+    response.is_phone_activate = estimateData.is_user_visit;
+    response.customer_name = estimateData.kakaoUser?.name || '정보 없음';
+    response.customer_email = estimateData.kakaoUser?.email || '정보 없음';
+    response.phone_brand = estimateData.phone?.brand?.name || '정보 없음';
+    response.phone_name = estimateData.phone?.name || '정보 없음';
+    response.phone_volume = estimateData.phone?.volume || '';
+    response.phone_plan_name = estimateData.priceList?.rate?.name || '정보 없음';
+    response.subscription_type = estimateData.subscription_type;
+    response.subsidy_by_telecom = subsidy_by_telecom.value;
+    response.subsidy_by_agency = estimateData.priceList.discount_price;
 
     return response;
   }
