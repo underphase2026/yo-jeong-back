@@ -1316,18 +1316,23 @@ export class AgencyService {
     if (!agencyForSearch)
       throw new UnauthorizedException('판매점 정보를 찾을 수 없습니다.');
 
+    console.log(`[getUserList] 판매점 ID: ${agencyForSearch.id}`);
+
     // 2. 24시간 전 시간 계산
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
+    console.log(`[getUserList] 24시간 전 시간: ${twentyFourHoursAgo.toISOString()}`);
+
     // 3. 해당 agency의 priceList로 발급한 모든 견적서 조회 (24시간 이내, 오래된 순)
+    // 디버깅: 24시간 필터 임시 제거
     const estimateList = await this.estimateRepository.find({
       where: {
         priceList: {
           agency: { id: agencyForSearch.id },
         },
         delete_time: '',
-        create_time: MoreThanOrEqual(twentyFourHoursAgo), // ★ 24시간 필터
+        // create_time: MoreThanOrEqual(twentyFourHoursAgo), // ★ 24시간 필터 임시 주석
       },
       relations: [
         'kakaoUser',
@@ -1340,6 +1345,8 @@ export class AgencyService {
         create_time: 'ASC', // ★ 오래된 순 정렬
       },
     });
+
+    console.log(`[getUserList] 조회된 견적서 개수: ${estimateList.length}`);
 
     // 4. 각 견적서를 UserItem으로 매핑
     const currentTime = new Date();
