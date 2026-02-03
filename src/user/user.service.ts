@@ -95,15 +95,20 @@ export class UserService {
     dto: searchAgenciesReqDto,
   ): Promise<searchAgenciesResDto> {
     const { phone_name, phone_brand, telecom, can_change_telecom } = dto;
+    
+    // Trim whitespace from string inputs to prevent matching issues
+    const trimmedPhoneName = phone_name.trim();
+    const trimmedPhoneBrand = phone_brand.trim();
+    const trimmedTelecom = telecom.trim();
 
     if (!can_change_telecom) {
       const priceList = await this.priceListRepository.find({
         where: {
           phone: {
-            name: phone_name,
-            brand: { name: phone_brand },
+            name: trimmedPhoneName,
+            brand: { name: trimmedPhoneBrand },
           },
-          telecom: { name: telecom },
+          telecom: { name: trimmedTelecom },
           delete_time: '',
           subscription_type: '기기변경',
         },
@@ -140,10 +145,10 @@ export class UserService {
       const priceList = await this.priceListRepository.find({
         where: {
           phone: {
-            name: phone_name,
-            brand: { name: phone_brand },
+            name: trimmedPhoneName,
+            brand: { name: trimmedPhoneBrand },
           },
-          telecom: { name: telecom },
+          telecom: { name: trimmedTelecom },
           delete_time: '',
         },
         relations: ['agency', 'phone', 'telecom', 'phone.brand'],
