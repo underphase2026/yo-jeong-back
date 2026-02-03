@@ -732,6 +732,7 @@ export class AgencyService {
     response.subsidy_by_telecom = subsidy_by_telecom.value;
     response.subsidy_by_agency = estimateData.priceList.discount_price;
     response.price = estimateData.price;
+    response.create_time = estimateData.create_time;
 
     return response;
   }

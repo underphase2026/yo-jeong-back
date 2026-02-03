@@ -94,4 +94,10 @@ export class getQuoteDetailResDto {
     example: 500000,
   })
   price: number;
+
+  @ApiProperty({
+    description: '견적서 생성 시간',
+    example: '2026-02-02T10:30:00.000Z',
+  })
+  create_time: Date;
 }
