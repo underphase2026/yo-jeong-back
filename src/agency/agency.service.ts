@@ -674,11 +674,7 @@ export class AgencyService {
     if (!agencyForSearch)
       throw new UnauthorizedException('판매점 정보를 찾을 수 없습니다.');
 
-    // 2. 24시간 전 시간 계산
-    const twentyFourHoursAgo = new Date();
-    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-
-    // 3. 인증 코드(auth_code)로 특정 견적서 조회 (24시간 이내, 오래된 순)
+    // 2. 인증 코드(auth_code)로 특정 견적서 조회 (시간 제한 없음)
     const estimateData = await this.estimateRepository.findOne({
       where: {
         auth_code: dto.auth_code,
@@ -686,7 +682,6 @@ export class AgencyService {
           agency: { id: agencyForSearch.id },
         },
         delete_time: '',
-        create_time: MoreThanOrEqual(twentyFourHoursAgo), // ★ 24시간 필터
       },
       relations: [
         'kakaoUser',
