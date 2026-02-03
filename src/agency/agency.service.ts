@@ -1055,6 +1055,7 @@ export class AgencyService {
           delete_time: '',
         },
         agency: { id: agencyId, delete_time: '' },
+        telecom: { name: telecom, delete_time: '' }, // 👈 통신사 조건 추가
         subscription_type: subscription_type,
         delete_time: '',
       },
