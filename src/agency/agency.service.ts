@@ -844,10 +844,11 @@ export class AgencyService {
       throw new NotFoundException('대리점을 찾을 수 없습니다.');
 
     const { phone_name } = dto;
+    const trimmedPhoneName = phone_name.trim();
 
     // 2. 핸드폰 조회 (delete_time: IsNull 적용)
     const phoneForSearch = await this.phoneRepository.findOne({
-      where: { name: phone_name, delete_time: '' },
+      where: { name: trimmedPhoneName, delete_time: '' },
     });
     if (!phoneForSearch)
       throw new NotFoundException('핸드폰 정보를 찾을 수 없습니다.');
@@ -877,7 +878,7 @@ export class AgencyService {
 
       const currentPriceList: PriceSettingFeildProps = {
         telecom: telecomName,
-        device: phone_name,
+        device: trimmedPhoneName,
         options: [],
       };
 
