@@ -68,6 +68,8 @@ import { checkLoginReqDto } from './dto/checkLogin.req.dto';
 import { checkLoginResDto } from './dto/checkLogin.res.dto';
 import { getPhoneDetailResDto } from './dto/getPhoneDetail.res.dto';
 import { getPhoneDetailReqDto } from './dto/getPhoneDetail.req.dto';
+import { getUserListReqDto } from './dto/getUserList.req.dto';
+import { getUserListResDto } from './dto/getUserList.res.dto';
 
 @Controller('agency')
 export class AgencyController {
@@ -454,6 +456,25 @@ export class AgencyController {
   ): Promise<checkLoginResDto> {
     const agency: payloadClass = req['agency'];
     return this.agencyService.checkLogin(dto, agency);
+  }
+
+  @Get('getUserList')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '유저 목록 조회 (24시간 이내, 오래된 순)' })
+  @ApiResponse({
+    status: 200,
+    description: '조회 성공',
+    type: getUserListResDto,
+  })
+  @ApiBadRequestResponse({ description: '조회 실패' })
+  @ApiNotFoundResponse({ description: '없음' })
+  @UseGuards(AuthGuard)
+  getUserList(
+    @Query() dto: getUserListReqDto,
+    @Req() req: Request,
+  ): Promise<getUserListResDto> {
+    const agency: payloadClass = req['agency'];
+    return this.agencyService.getUserList(dto, agency);
   }
 
   // @Get('pushDummyData')

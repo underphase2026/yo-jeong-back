@@ -88,4 +88,10 @@ export class getQuoteDetailResDto {
     example: 300000,
   })
   subsidy_by_agency: number;
+
+  @ApiProperty({
+    description: '최종 가격 (원)',
+    example: 500000,
+  })
+  price: number;
 }

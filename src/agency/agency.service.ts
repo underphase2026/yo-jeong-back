@@ -69,6 +69,8 @@ import { checkLoginResDto } from './dto/checkLogin.res.dto';
 import { app } from 'firebase-admin';
 import { getPhoneDetailResDto } from './dto/getPhoneDetail.res.dto';
 import { getPhoneDetailReqDto } from './dto/getPhoneDetail.req.dto';
+import { getUserListReqDto } from './dto/getUserList.req.dto';
+import { getUserListResDto, UserItem } from './dto/getUserList.res.dto';
 
 interface PriceListEntity {
   id: number;
@@ -734,6 +736,7 @@ export class AgencyService {
     response.subscription_type = estimateData.subscription_type;
     response.subsidy_by_telecom = subsidy_by_telecom.value;
     response.subsidy_by_agency = estimateData.priceList.discount_price;
+    response.price = estimateData.price;
 
     return response;
   }
@@ -1294,6 +1297,91 @@ export class AgencyService {
     // }
 
     const response = {};
+    return response;
+  }
+
+  async getUserList(
+    dto: getUserListReqDto,
+    agency: payloadClass,
+  ): Promise<getUserListResDto> {
+    if (!agency) throw new UnauthorizedException();
+
+    // 1. 판매점 확인
+    const agencyForSearch = await this.agencyRepository.findOne({
+      where: {
+        id: agency.payload.id,
+        delete_time: '',
+      },
+    });
+    if (!agencyForSearch)
+      throw new UnauthorizedException('판매점 정보를 찾을 수 없습니다.');
+
+    // 2. 24시간 전 시간 계산
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    // 3. 해당 agency의 priceList로 발급한 모든 견적서 조회 (24시간 이내, 오래된 순)
+    const estimateList = await this.estimateRepository.find({
+      where: {
+        priceList: {
+          agency: { id: agencyForSearch.id },
+        },
+        delete_time: '',
+        create_time: MoreThanOrEqual(twentyFourHoursAgo), // ★ 24시간 필터
+      },
+      relations: [
+        'kakaoUser',
+        'priceList',
+        'priceList.agency',
+        'phone',
+        'phone.brand',
+      ],
+      order: {
+        create_time: 'ASC', // ★ 오래된 순 정렬
+      },
+    });
+
+    // 4. 각 견적서를 UserItem으로 매핑
+    const currentTime = new Date();
+
+    const users = estimateList.map((estimate) => {
+      // 경과 시간 계산
+      const diffMs = currentTime.getTime() - estimate.create_time.getTime();
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMinutes / 60);
+      const remainingMinutes = diffMinutes % 60;
+
+      let elapsedTime = '';
+      if (diffHours > 0) {
+        elapsedTime = `${diffHours}시간`;
+        if (remainingMinutes > 0) {
+          elapsedTime += ` ${remainingMinutes}분`;
+        }
+        elapsedTime += ' 전';
+      } else if (diffMinutes > 0) {
+        elapsedTime = `${diffMinutes}분 전`;
+      } else {
+        elapsedTime = '방금 전';
+      }
+
+      const user = new UserItem();
+      user.estimate_id = estimate.id;
+      user.customer_name = estimate.kakaoUser?.name || '정보 없음';
+      user.customer_email = estimate.kakaoUser?.email || '정보 없음';
+      user.phone_brand = estimate.phone?.brand?.name || '정보 없음';
+      user.phone_name = estimate.phone?.name || '정보 없음';
+      user.auth_code = estimate.auth_code;
+      user.is_user_visit = estimate.is_user_visit;
+      user.create_time = estimate.create_time;
+      user.elapsed_time = elapsedTime;
+
+      return user;
+    });
+
+    // 5. 응답 DTO 생성
+    const response = new getUserListResDto();
+    response.users = users;
+
     return response;
   }
 }
