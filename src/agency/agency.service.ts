@@ -600,22 +600,22 @@ export class AgencyService {
     response.quote_count = statusAgency.quote_count;
     response.complete_quote_count = statusAgency.complete_quote_count;
 
-    response.quotes = estimates.map((estimate) => {
-      const q = new quoteDto();
-      q.quote_id = estimate.id;
-      q.customer_name = estimate.kakaoUser?.name || '정보 없음';
+    // response.quotes = estimates.map((estimate) => {
+    //   const q = new quoteDto();
+    //   q.quote_id = estimate.id;
+    //   q.customer_name = estimate.kakaoUser?.name || '정보 없음';
 
-      // DTO의 오타(costomer)에 맞춰 매핑하되, 엔티티에 phone_number가 활성화되어 있어야 합니다.
-      // 만약 엔티티 컬럼이 없다면 undefined가 들어갑니다.
-      q.costomer_phone_number =
-        (estimate.kakaoUser as any)?.phone_number || '010-0000-0000';
+    //   // DTO의 오타(costomer)에 맞춰 매핑하되, 엔티티에 phone_number가 활성화되어 있어야 합니다.
+    //   // 만약 엔티티 컬럼이 없다면 undefined가 들어갑니다.
+    //   q.costomer_phone_number =
+    //     (estimate.kakaoUser as any)?.phone_number || '010-0000-0000';
 
-      q.quote_code = estimate.auth_code;
-      q.create_time = estimate.create_time;
-      q.is_user_visit = estimate.is_user_visit; // 방문 여부 추가
+    //   q.quote_code = estimate.auth_code;
+    //   q.create_time = estimate.create_time;
+    //   q.is_user_visit = estimate.is_user_visit; // 방문 여부 추가
 
-      return q;
-    });
+    //   return q;
+    // });
 
     return response;
   }

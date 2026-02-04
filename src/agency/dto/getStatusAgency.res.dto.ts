@@ -27,5 +27,5 @@ export class getStatusAgencyResDto {
   })
   complete_quote_count: number;
 
-  quotes: quoteDto[];
+  // quotes: quoteDto[];
 }
