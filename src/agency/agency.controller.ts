@@ -70,6 +70,8 @@ import { getPhoneDetailResDto } from './dto/getPhoneDetail.res.dto';
 import { getPhoneDetailReqDto } from './dto/getPhoneDetail.req.dto';
 import { getUserListReqDto } from './dto/getUserList.req.dto';
 import { getUserListResDto } from './dto/getUserList.res.dto';
+import { updateVisitStatusReqDto } from './dto/updateVisitStatus.req.dto';
+import { updateVisitStatusResDto } from './dto/updateVisitStatus.res.dto';
 
 @Controller('agency')
 export class AgencyController {
@@ -456,6 +458,25 @@ export class AgencyController {
   ): Promise<checkLoginResDto> {
     const agency: payloadClass = req['agency'];
     return this.agencyService.checkLogin(dto, agency);
+  }
+
+  @Post('updateVisitStatus')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '견적서 방문 여부 업데이트' })
+  @ApiResponse({
+    status: 201,
+    description: '업데이트 성공',
+    type: updateVisitStatusResDto,
+  })
+  @ApiBadRequestResponse({ description: '업데이트 실패' })
+  @ApiNotFoundResponse({ description: '해당 견적서 없음' })
+  @UseGuards(AuthGuard)
+  updateVisitStatus(
+    @Body() dto: updateVisitStatusReqDto,
+    @Req() req: Request,
+  ): Promise<updateVisitStatusResDto> {
+    const agency: payloadClass = req['agency'];
+    return this.agencyService.updateVisitStatus(dto, agency);
   }
 
   @Get('getUserList')

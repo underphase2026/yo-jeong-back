@@ -71,6 +71,9 @@ import { getPhoneDetailResDto } from './dto/getPhoneDetail.res.dto';
 import { getPhoneDetailReqDto } from './dto/getPhoneDetail.req.dto';
 import { getUserListReqDto } from './dto/getUserList.req.dto';
 import { getUserListResDto, UserItem } from './dto/getUserList.res.dto';
+import { updateVisitStatusReqDto } from './dto/updateVisitStatus.req.dto';
+import { updateVisitStatusResDto } from './dto/updateVisitStatus.res.dto';
+
 
 interface PriceListEntity {
   id: number;
@@ -1295,6 +1298,54 @@ export class AgencyService {
     // }
 
     const response = {};
+    return response;
+  }
+
+  async updateVisitStatus(
+    dto: updateVisitStatusReqDto,
+    agency: payloadClass,
+  ): Promise<updateVisitStatusResDto> {
+    if (!agency) throw new UnauthorizedException();
+
+    // 1. 판매점 확인
+    const agencyForSearch = await this.agencyRepository.findOne({
+      where: {
+        id: agency.payload.id,
+        delete_time: '',
+      },
+    });
+    if (!agencyForSearch)
+      throw new UnauthorizedException('판매점 정보를 찾을 수 없습니다.');
+
+    // 2. 인증 코드(auth_code)로 견적서 조회
+    const estimate = await this.estimateRepository.findOne({
+      where: {
+        auth_code: dto.auth_code,
+        priceList: {
+          agency: { id: agencyForSearch.id },
+        },
+        delete_time: '',
+      },
+      relations: ['priceList', 'priceList.agency'],
+    });
+
+    if (!estimate) {
+      throw new NotFoundException(
+        '해당 인증 코드와 일치하는 견적서가 없습니다.',
+      );
+    }
+
+    // 3. is_user_visit 값을 업데이트
+    estimate.is_user_visit = dto.is_user_visit;
+    await this.estimateRepository.save(estimate);
+
+    // 4. 응답 DTO 생성
+    const response = new updateVisitStatusResDto();
+    response.success = true;
+    response.message = dto.is_user_visit
+      ? '고객 방문이 확인되었습니다.'
+      : '고객 방문 상태가 취소되었습니다.';
+
     return response;
   }
 
