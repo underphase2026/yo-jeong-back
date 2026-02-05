@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Post,
   Query,
   Req,
@@ -72,6 +73,12 @@ import { getUserListReqDto } from './dto/getUserList.req.dto';
 import { getUserListResDto } from './dto/getUserList.res.dto';
 import { updateVisitStatusReqDto } from './dto/updateVisitStatus.req.dto';
 import { updateVisitStatusResDto } from './dto/updateVisitStatus.res.dto';
+import { addAdditionalDiscountReqDto } from './dto/addAdditionalDiscount.req.dto';
+import { addAdditionalDiscountResDto } from './dto/addAdditionalDiscount.res.dto';
+import { updateAdditionalDiscountReqDto } from './dto/updateAdditionalDiscount.req.dto';
+import { updateAdditionalDiscountResDto } from './dto/updateAdditionalDiscount.res.dto';
+import { deleteAdditionalDiscountReqDto } from './dto/deleteAdditionalDiscount.req.dto';
+import { deleteAdditionalDiscountResDto } from './dto/deleteAdditionalDiscount.res.dto';
 
 @Controller('agency')
 export class AgencyController {
@@ -496,6 +503,63 @@ export class AgencyController {
   ): Promise<getUserListResDto> {
     const agency: payloadClass = req['agency'];
     return this.agencyService.getUserList(dto, agency);
+  }
+
+  @Post('additional-discount')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '추가할인 등록' })
+  @ApiResponse({
+    status: 201,
+    description: '등록 성공',
+    type: addAdditionalDiscountResDto,
+  })
+  @ApiBadRequestResponse({ description: '등록 실패' })
+  @ApiNotFoundResponse({ description: '대리점을 찾을 수 없음' })
+  @UseGuards(AuthGuard)
+  addAdditionalDiscount(
+    @Body() dto: addAdditionalDiscountReqDto,
+    @Req() req: Request,
+  ): Promise<addAdditionalDiscountResDto> {
+    const agency: payloadClass = req['agency'];
+    return this.agencyService.addAdditionalDiscount(dto, agency);
+  }
+
+  @Patch('additional-discount')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '추가할인 수정' })
+  @ApiResponse({
+    status: 200,
+    description: '수정 성공',
+    type: updateAdditionalDiscountResDto,
+  })
+  @ApiBadRequestResponse({ description: '수정 실패' })
+  @ApiNotFoundResponse({ description: '추가할인을 찾을 수 없음' })
+  @UseGuards(AuthGuard)
+  updateAdditionalDiscount(
+    @Body() dto: updateAdditionalDiscountReqDto,
+    @Req() req: Request,
+  ): Promise<updateAdditionalDiscountResDto> {
+    const agency: payloadClass = req['agency'];
+    return this.agencyService.updateAdditionalDiscount(dto, agency);
+  }
+
+  @Delete('additional-discount')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '추가할인 삭제 (소프트 삭제)' })
+  @ApiResponse({
+    status: 200,
+    description: '삭제 성공',
+    type: deleteAdditionalDiscountResDto,
+  })
+  @ApiBadRequestResponse({ description: '삭제 실패' })
+  @ApiNotFoundResponse({ description: '추가할인을 찾을 수 없음' })
+  @UseGuards(AuthGuard)
+  deleteAdditionalDiscount(
+    @Body() dto: deleteAdditionalDiscountReqDto,
+    @Req() req: Request,
+  ): Promise<deleteAdditionalDiscountResDto> {
+    const agency: payloadClass = req['agency'];
+    return this.agencyService.deleteAdditionalDiscount(dto, agency);
   }
 
   // @Get('pushDummyData')

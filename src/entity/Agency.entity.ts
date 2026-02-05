@@ -9,6 +9,7 @@ import {
 import { Seller } from './Seller.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { PriceList } from './PriceList.entity';
+import { AdditionalDiscount } from './AdditionalDiscount.entity';
 
 @Entity()
 export class Agency {
@@ -152,4 +153,7 @@ export class Agency {
 
   @OneToMany(() => PriceList, (priceList) => priceList.agency)
   priceLists: PriceList[];
+
+  @OneToMany(() => AdditionalDiscount, (discount) => discount.agency)
+  additionalDiscounts: AdditionalDiscount[];
 }

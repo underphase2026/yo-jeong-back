@@ -15,6 +15,7 @@ import { SubsidyByTelecom } from 'src/entity/SubsidyByTelecom.entity';
 import { UserAuthModule } from 'src/user-auth/user-auth.module';
 import { ConfigService } from '@nestjs/config';
 import { HttpModule, HttpService } from '@nestjs/axios';
+import { AdditionalDiscount } from 'src/entity/AdditionalDiscount.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { HttpModule, HttpService } from '@nestjs/axios';
       Telecom,
       Rate,
       SubsidyByTelecom,
+      AdditionalDiscount,
     ]),
   ],
   providers: [

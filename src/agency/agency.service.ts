@@ -73,6 +73,13 @@ import { getUserListReqDto } from './dto/getUserList.req.dto';
 import { getUserListResDto, UserItem } from './dto/getUserList.res.dto';
 import { updateVisitStatusReqDto } from './dto/updateVisitStatus.req.dto';
 import { updateVisitStatusResDto } from './dto/updateVisitStatus.res.dto';
+import { addAdditionalDiscountReqDto } from './dto/addAdditionalDiscount.req.dto';
+import { addAdditionalDiscountResDto } from './dto/addAdditionalDiscount.res.dto';
+import { updateAdditionalDiscountReqDto } from './dto/updateAdditionalDiscount.req.dto';
+import { updateAdditionalDiscountResDto } from './dto/updateAdditionalDiscount.res.dto';
+import { deleteAdditionalDiscountReqDto } from './dto/deleteAdditionalDiscount.req.dto';
+import { deleteAdditionalDiscountResDto } from './dto/deleteAdditionalDiscount.res.dto';
+import { AdditionalDiscount } from 'src/entity/AdditionalDiscount.entity';
 
 
 interface PriceListEntity {
@@ -112,6 +119,8 @@ export class AgencyService {
     private estimateRepository: Repository<Estimate>,
     @InjectRepository(KakaoUser)
     private kakaoUserRepository: Repository<KakaoUser>,
+    @InjectRepository(AdditionalDiscount)
+    private additionalDiscountRepository: Repository<AdditionalDiscount>,
   ) {}
 
   async agencyLogin(dto: agencyLoginReqDto): Promise<agencyLoginResDto> {
@@ -1437,6 +1446,92 @@ export class AgencyService {
     const response = new getUserListResDto();
     response.users = users;
 
+    return response;
+  }
+
+  async addAdditionalDiscount(
+    dto: addAdditionalDiscountReqDto,
+    agency: payloadClass,
+  ): Promise<addAdditionalDiscountResDto> {
+    // 1. Agency 확인
+    const agencyForSearch = await this.agencyRepository.findOne({
+      where: { id: agency.payload.id, delete_time: '' },
+    });
+    if (!agencyForSearch) throw new NotFoundException('대리점을 찾을 수 없습니다.');
+
+    // 2. 새 추가할인 엔티티 생성
+    const newDiscount = new AdditionalDiscount();
+    newDiscount.name = dto.name;
+    newDiscount.price = dto.price;
+    newDiscount.agency = agencyForSearch;
+    newDiscount.delete_time = '';
+
+    // 3. 저장
+    await this.additionalDiscountRepository.save(newDiscount);
+
+    // 4. 빈 응답 반환
+    const response = new addAdditionalDiscountResDto();
+    return response;
+  }
+
+  async updateAdditionalDiscount(
+    dto: updateAdditionalDiscountReqDto,
+    agency: payloadClass,
+  ): Promise<updateAdditionalDiscountResDto> {
+    // 1. Agency 확인
+    const agencyForSearch = await this.agencyRepository.findOne({
+      where: { id: agency.payload.id, delete_time: '' },
+    });
+    if (!agencyForSearch) throw new NotFoundException('대리점을 찾을 수 없습니다.');
+
+    // 2. 기존 할인 조회
+    const discount = await this.additionalDiscountRepository.findOne({
+      where: {
+        name: dto.name,
+        agency: { id: agencyForSearch.id },
+        delete_time: '',
+      },
+    });
+    if (!discount) throw new NotFoundException('추가할인을 찾을 수 없습니다.');
+
+    // 3. 수정
+    discount.name = dto.newName;
+    discount.price = dto.price;
+    await this.additionalDiscountRepository.save(discount);
+
+    // 4. 응답 반환
+    const response = new updateAdditionalDiscountResDto();
+    response.name = discount.name;
+    response.price = discount.price;
+    return response;
+  }
+
+  async deleteAdditionalDiscount(
+    dto: deleteAdditionalDiscountReqDto,
+    agency: payloadClass,
+  ): Promise<deleteAdditionalDiscountResDto> {
+    // 1. Agency 확인
+    const agencyForSearch = await this.agencyRepository.findOne({
+      where: { id: agency.payload.id, delete_time: '' },
+    });
+    if (!agencyForSearch) throw new NotFoundException('대리점을 찾을 수 없습니다.');
+
+    // 2. 할인 조회
+    const discount = await this.additionalDiscountRepository.findOne({
+      where: {
+        name: dto.name,
+        agency: { id: agencyForSearch.id },
+        delete_time: '',
+      },
+    });
+    if (!discount) throw new NotFoundException('추가할인을 찾을 수 없습니다.');
+
+    // 3. 소프트 삭제 (delete_time에 create_time을 string으로 변환하여 저장)
+    discount.delete_time = discount.create_time.toString();
+    await this.additionalDiscountRepository.save(discount);
+
+    // 4. 빈 응답 반환
+    const response = new deleteAdditionalDiscountResDto();
     return response;
   }
 }

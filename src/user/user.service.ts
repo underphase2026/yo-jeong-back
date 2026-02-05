@@ -46,6 +46,10 @@ import { SubsidyByTelecom } from 'src/entity/SubsidyByTelecom.entity';
 import { userPayloadClass } from 'src/user-auth/userPayload.class';
 import { UserAuthService } from 'src/user-auth/user-auth.service';
 import { UserPayload } from 'src/user-auth/userPayload';
+import { getAdditionalDiscountsReqDto } from './dto/getAdditionalDiscounts.req.dto';
+import { getAdditionalDiscountsResDto } from './dto/getAdditionalDiscounts.res.dto';
+import { AdditionalDiscountItem } from './dto/AdditionalDiscountItem.class';
+import { AdditionalDiscount } from 'src/entity/AdditionalDiscount.entity';
 
 @Injectable()
 export class UserService {
@@ -68,6 +72,8 @@ export class UserService {
     private rateRepository: Repository<Rate>,
     @InjectRepository(SubsidyByTelecom)
     private subsidyRepository: Repository<SubsidyByTelecom>,
+    @InjectRepository(AdditionalDiscount)
+    private additionalDiscountRepository: Repository<AdditionalDiscount>,
     private userAuthService: UserAuthService,
   ) {}
 
@@ -542,6 +548,37 @@ export class UserService {
     const response = new getSubsidyResDto();
     response.subsidy_value = subsidy.value;
     // response.subsidy_value = 500000;
+    return response;
+  }
+
+  async getAdditionalDiscounts(
+    dto: getAdditionalDiscountsReqDto,
+  ): Promise<getAdditionalDiscountsResDto> {
+    // 1. Agency 확인
+    const agency = await this.agencyRepository.findOne({
+      where: { id: dto.agencyId, delete_time: '' },
+    });
+    if (!agency) throw new NotFoundException('대리점을 찾을 수 없습니다.');
+
+    // 2. 해당 Agency의 추가할인 목록 조회 (소프트 삭제된 항목 제외)
+    const discounts = await this.additionalDiscountRepository.find({
+      where: {
+        agency: { id: agency.id },
+        delete_time: '',
+      },
+    });
+
+    // 3. AdditionalDiscountItem으로 변환 (한글 필드명 사용)
+    const discountItems = discounts.map((discount) => {
+      const item = new AdditionalDiscountItem();
+      item['추가 할인 명'] = discount.name;
+      item['가격'] = discount.price;
+      return item;
+    });
+
+    // 4. 응답 반환
+    const response = new getAdditionalDiscountsResDto();
+    response.discounts = discountItems;
     return response;
   }
 }

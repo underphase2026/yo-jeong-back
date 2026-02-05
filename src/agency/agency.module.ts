@@ -16,6 +16,7 @@ import { SubsidyByTelecom } from 'src/entity/SubsidyByTelecom.entity';
 import { StatusAgency } from 'src/entity/StatusAgency.entity';
 import { Estimate } from 'src/entity/Estimate.entity';
 import { KakaoUser } from 'src/entity/KakaoUser.entity';
+import { AdditionalDiscount } from 'src/entity/AdditionalDiscount.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { KakaoUser } from 'src/entity/KakaoUser.entity';
       StatusAgency,
       Estimate,
       KakaoUser,
+      AdditionalDiscount,
     ]),
     forwardRef(() => UserModule),
     forwardRef(() => AuthModule),

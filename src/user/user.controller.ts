@@ -45,6 +45,8 @@ import { getSubsidyResDto } from './dto/getSubsidy.res.dto';
 import { UserAuthGuard } from 'src/user-auth/user-auth.guard';
 import { userPayloadClass } from 'src/user-auth/userPayload.class';
 import { UserPayload } from 'src/user-auth/userPayload';
+import { getAdditionalDiscountsReqDto } from './dto/getAdditionalDiscounts.req.dto';
+import { getAdditionalDiscountsResDto } from './dto/getAdditionalDiscounts.res.dto';
 
 @Controller('user')
 export class UserController {
@@ -167,5 +169,20 @@ export class UserController {
   @ApiBadRequestResponse({ description: '지원금 조회 실패' })
   async getSubsidy(@Query() dto: getSubsidyReqDto): Promise<getSubsidyResDto> {
     return this.userService.getSubsidy(dto);
+  }
+
+  @Get('additional-discounts')
+  @ApiOperation({ summary: '추가할인 목록 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '조회 성공',
+    type: getAdditionalDiscountsResDto,
+  })
+  @ApiBadRequestResponse({ description: '조회 실패' })
+  @ApiNotFoundResponse({ description: '대리점을 찾을 수 없음' })
+  async getAdditionalDiscounts(
+    @Query() dto: getAdditionalDiscountsReqDto,
+  ): Promise<getAdditionalDiscountsResDto> {
+    return this.userService.getAdditionalDiscounts(dto);
   }
 }
