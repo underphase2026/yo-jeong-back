@@ -904,6 +904,7 @@ export class AgencyService {
           type: type,
           plan: '설정된 요금제 없음',
           price: 0,
+          priceListId: 0, // 기본값 0 또는 null 처리
         };
 
         // 메모리에 가져온 데이터에서 필터링 (DB 재조회 방지)
@@ -919,6 +920,7 @@ export class AgencyService {
 
           option.plan = matchedPrice.rate?.name || '요금제 정보 없음';
           option.price = originalPrice - agencySubsidy - telecomSubsidy;
+          option.priceListId = matchedPrice.id; // PriceList ID 할당
         }
 
         currentPriceList.options.push(option);
@@ -1079,6 +1081,8 @@ export class AgencyService {
     const finalPrice =
       phoneForSearch.price - subsidy_by_agency - subsidy_by_telecom.value;
 
+    const response = new enrollPriceListDetailResDto();
+
     if (!priceListForSearch) {
       // [신규 등록]
       const telecom_ = await this.telecomRepository.findOne({
@@ -1100,6 +1104,20 @@ export class AgencyService {
       );
       pricelistEntity.subsidy_by_agency = subsidy_by_agency;
       await this.priceListRepository.save(pricelistEntity);
+      const savedPriceList = await this.priceListRepository.findOne({
+        where: {
+          phone: {
+            name: phone_name,
+            brand: { name: phone_brand },
+          },
+          agency: { id: agencyId },
+          telecom: { name: telecom },
+          subscription_type: subscription_type,
+          delete_time: '',
+        },
+        order: { create_time: 'DESC' }, // 가장 최근 생성된 항목 조회
+      });
+      response.priceListId = savedPriceList?.id || 0;
     } else {
       // [수정 로직] 기존 데이터가 있을 때 모든 필드 업데이트
       priceListForSearch.price = finalPrice;
@@ -1107,9 +1125,8 @@ export class AgencyService {
       priceListForSearch.subsidy_by_agency = subsidy_by_agency; // 👈 추가지원금 업데이트 반영
 
       await this.priceListRepository.save(priceListForSearch);
+      response.priceListId = priceListForSearch.id;
     }
-
-    const response = new enrollPriceListDetailResDto();
 
     return response;
   }

@@ -4,6 +4,7 @@ export interface PriceOption {
   type: '기기변경' | '번호이동' | '신규가입'; // 명시적으로 3가지 타입만 포함
   plan: string;
   price: number;
+  priceListId: number;
 }
 
 // Interface for the single telecom's price setting - 요청하신 응답의 배열 요소 구조
