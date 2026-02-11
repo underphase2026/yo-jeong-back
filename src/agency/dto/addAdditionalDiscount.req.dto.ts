@@ -17,4 +17,12 @@ export class addAdditionalDiscountReqDto {
     example: 50000,
   })
   price: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: '가격표 ID',
+    example: 1,
+  })
+  priceListId: number;
 }

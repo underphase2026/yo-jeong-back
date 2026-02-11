@@ -154,6 +154,5 @@ export class Agency {
   @OneToMany(() => PriceList, (priceList) => priceList.agency)
   priceLists: PriceList[];
 
-  @OneToMany(() => AdditionalDiscount, (discount) => discount.agency)
-  additionalDiscounts: AdditionalDiscount[];
+
 }

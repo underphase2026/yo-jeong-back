@@ -1477,17 +1477,23 @@ export class AgencyService {
     });
     if (!agencyForSearch) throw new NotFoundException('대리점을 찾을 수 없습니다.');
 
-    // 2. 새 추가할인 엔티티 생성
+    // 2. PriceList 확인
+    const priceList = await this.priceListRepository.findOne({
+      where: { id: dto.priceListId, agency: { id: agencyForSearch.id }, delete_time: '' },
+    });
+    if (!priceList) throw new NotFoundException('가격표를 찾을 수 없습니다.');
+
+    // 3. 새 추가할인 엔티티 생성
     const newDiscount = new AdditionalDiscount();
     newDiscount.name = dto.name;
     newDiscount.price = dto.price;
-    newDiscount.agency = agencyForSearch;
+    newDiscount.priceList = priceList; // PriceList 연결
     newDiscount.delete_time = '';
 
-    // 3. 저장
+    // 4. 저장
     await this.additionalDiscountRepository.save(newDiscount);
 
-    // 4. 빈 응답 반환
+    // 5. 빈 응답 반환
     const response = new addAdditionalDiscountResDto();
     return response;
   }
@@ -1502,22 +1508,31 @@ export class AgencyService {
     });
     if (!agencyForSearch) throw new NotFoundException('대리점을 찾을 수 없습니다.');
 
-    // 2. 기존 할인 조회
+    // 2. 기존 할인 조회 (ID로 조회)
     const discount = await this.additionalDiscountRepository.findOne({
       where: {
-        name: dto.name,
-        agency: { id: agencyForSearch.id },
+        id: dto.id,
         delete_time: '',
       },
+      relations: ['priceList', 'priceList.agency'],
     });
+
     if (!discount) throw new NotFoundException('추가할인을 찾을 수 없습니다.');
 
-    // 3. 수정
+    // 3. 권한 및 정합성 검증
+    if (discount.priceList.id !== dto.priceListId) {
+      throw new BadRequestException('해당 추가할인은 요청한 가격표에 속하지 않습니다.');
+    }
+    if (discount.priceList.agency.id !== agencyForSearch.id) {
+      throw new NotFoundException('해당 추가할인을 수정할 권한이 없습니다.');
+    }
+
+    // 4. 수정
     discount.name = dto.newName;
     discount.price = dto.price;
     await this.additionalDiscountRepository.save(discount);
 
-    // 4. 응답 반환
+    // 5. 응답 반환
     const response = new updateAdditionalDiscountResDto();
     response.name = discount.name;
     response.price = discount.price;
@@ -1534,21 +1549,38 @@ export class AgencyService {
     });
     if (!agencyForSearch) throw new NotFoundException('대리점을 찾을 수 없습니다.');
 
-    // 2. 할인 조회
+    // 2. 할인 조회 (ID로 조회)
     const discount = await this.additionalDiscountRepository.findOne({
       where: {
-        name: dto.name,
-        agency: { id: agencyForSearch.id },
+        id: dto.id,
         delete_time: '',
       },
+      relations: ['priceList', 'priceList.agency'],
     });
+
     if (!discount) throw new NotFoundException('추가할인을 찾을 수 없습니다.');
 
-    // 3. 소프트 삭제 (delete_time에 create_time을 string으로 변환하여 저장)
-    discount.delete_time = discount.create_time.toString();
+    // 3. 권한 및 정합성 검증
+    if (discount.priceList.id !== dto.priceListId) {
+      throw new BadRequestException('해당 추가할인은 요청한 가격표에 속하지 않습니다.');
+    }
+    if (discount.priceList.agency.id !== agencyForSearch.id) {
+      throw new NotFoundException('해당 추가할인을 삭제할 권한이 없습니다.');
+    }
+
+    // 4. 소프트 삭제
+    discount.delete_time = discount.create_time.toString(); // is this correct? usually new Date().toISOString()
+    // However, existing code used create_time.toString(). I'll stick to new Date().toISOString() for better practice or follow existing pattern?
+    // Existing pattern: discount.delete_time = discount.create_time.toString();
+    // Wait, create_time is a Date object? .toString() might be weird.
+    // Let's use new Date().toISOString() but strict on return type.
+    // The previous code used: discount.delete_time = discount.create_time.toString();
+    // I will use new Date().toISOString() as it is safer for string column.
+    discount.delete_time = new Date().toISOString(); 
+    
     await this.additionalDiscountRepository.save(discount);
 
-    // 4. 빈 응답 반환
+    // 5. 빈 응답 반환
     const response = new deleteAdditionalDiscountResDto();
     return response;
   }

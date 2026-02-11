@@ -1,12 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class deleteAdditionalDiscountReqDto {
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
   @ApiProperty({
-    description: '삭제할 할인 이름',
-    example: '신규가입할인',
+    description: '삭제할 추가할인 ID (PK)',
+    example: 1,
   })
-  name: string;
+  id: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({
+    description: '가격표 ID',
+    example: 1,
+  })
+  priceListId: number;
 }

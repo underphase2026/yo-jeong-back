@@ -561,11 +561,20 @@ export class UserService {
     if (!agency) throw new NotFoundException('대리점을 찾을 수 없습니다.');
 
     // 2. 해당 Agency의 추가할인 목록 조회 (소프트 삭제된 항목 제외)
+    // priceListId가 있으면 해당 가격표의 할인만 조회, 없으면 대리점 전체 조회
+    const whereCondition: any = {
+      delete_time: '',
+    };
+
+    if (dto.priceListId) {
+      whereCondition.priceList = { id: dto.priceListId };
+    } else {
+      whereCondition.priceList = { agency: { id: agency.id } };
+    }
+
     const discounts = await this.additionalDiscountRepository.find({
-      where: {
-        agency: { id: agency.id },
-        delete_time: '',
-      },
+      where: whereCondition,
+      relations: ['priceList'], // 필요시 관계 로드
     });
 
     // 3. AdditionalDiscountItem으로 변환 (한글 필드명 사용)

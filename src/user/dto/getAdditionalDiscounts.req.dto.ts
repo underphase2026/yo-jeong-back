@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class getAdditionalDiscountsReqDto {
   @IsNumber()
@@ -9,4 +9,13 @@ export class getAdditionalDiscountsReqDto {
     example: 1,
   })
   agencyId: number;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({
+    description: '조회할 가격표 ID (옵션)',
+    example: 1,
+    required: false,
+  })
+  priceListId?: number;
 }

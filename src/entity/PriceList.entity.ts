@@ -13,8 +13,17 @@ import { Estimate } from './Estimate.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { Rate } from './Rate.entity';
 
+import { AdditionalDiscount } from './AdditionalDiscount.entity';
+
 @Entity()
 export class PriceList {
+// ... existing code ...
+  @OneToMany(() => Estimate, (estimate) => estimate.priceList)
+  estimates: Estimate[];
+
+  @OneToMany(() => AdditionalDiscount, (discount) => discount.priceList)
+  additionalDiscounts: AdditionalDiscount[];
+// ... existing init/setter methods ...
   @PrimaryGeneratedColumn()
   @ApiProperty({
     description: '가격표 ID (PK)',
@@ -125,8 +134,7 @@ export class PriceList {
   })
   delete_time: string;
 
-  @OneToMany(() => Estimate, (estimate) => estimate.priceList)
-  estimates: Estimate[];
+
 
   init(
     _agency: Agency,

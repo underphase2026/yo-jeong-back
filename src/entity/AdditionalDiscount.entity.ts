@@ -8,6 +8,8 @@ import {
 import { Agency } from './Agency.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
+import { PriceList } from './PriceList.entity';
+
 @Entity()
 export class AdditionalDiscount {
   @PrimaryGeneratedColumn()
@@ -31,15 +33,14 @@ export class AdditionalDiscount {
   })
   price: number;
 
-  @ManyToOne(() => Agency, (agency) => agency.additionalDiscounts)
+  @ManyToOne(() => PriceList, (priceList) => priceList.additionalDiscounts)
   @ApiProperty({
-    description: '대리점 정보 (FK)',
+    description: '가격표 정보 (FK)',
     example: {
       id: 1,
-      name: 'SKT 대리점 가야점',
     },
   })
-  agency: Agency;
+  priceList: PriceList;
 
   @CreateDateColumn()
   @ApiProperty({
