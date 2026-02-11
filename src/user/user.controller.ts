@@ -171,7 +171,7 @@ export class UserController {
     return this.userService.getSubsidy(dto);
   }
 
-  @Get('getAdditionalDiscounts')
+  @Post('getAdditionalDiscounts')
   @ApiOperation({ summary: '추가할인 목록 조회' })
   @ApiResponse({
     status: 200,
@@ -181,7 +181,7 @@ export class UserController {
   @ApiBadRequestResponse({ description: '조회 실패' })
   @ApiNotFoundResponse({ description: '대리점을 찾을 수 없음' })
   async getAdditionalDiscounts(
-    @Query() dto: getAdditionalDiscountsReqDto,
+    @Body() dto: getAdditionalDiscountsReqDto,
   ): Promise<getAdditionalDiscountsResDto> {
     return this.userService.getAdditionalDiscounts(dto);
   }
