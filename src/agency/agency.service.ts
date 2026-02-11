@@ -872,7 +872,7 @@ export class AgencyService {
         phone: { id: phoneForSearch.id },
         delete_time: '',
       },
-      relations: ['telecom', 'rate'],
+      relations: ['telecom', 'rate', 'phone'], // phone 관계 추가
     });
 
     const TARGET_TELECOMS = ['SKT', 'KT', 'LG U'] as const;
@@ -902,7 +902,7 @@ export class AgencyService {
       for (const type of REQUIRED_TYPES) {
         const option: PriceOption = {
           type: type,
-          plan: '설정된 가격 없음',
+          plan: '설정된 요금제 없음',
           price: 0,
         };
 
@@ -912,7 +912,8 @@ export class AgencyService {
         );
 
         if (matchedPrice) {
-          const originalPrice = matchedPrice.original_price || 0;
+          // Phone 테이블의 현재 가격을 사용 (실시간 가격 반영)
+          const originalPrice = matchedPrice.phone?.price || phoneForSearch.price || 0;
           const agencySubsidy = matchedPrice.subsidy_by_agency || 0;
           const telecomSubsidy = subsidyByTelecom ? subsidyByTelecom.value : 0;
 

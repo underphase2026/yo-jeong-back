@@ -505,7 +505,7 @@ export class AgencyController {
     return this.agencyService.getUserList(dto, agency);
   }
 
-  @Post('additional-discount')
+  @Post('addAdditionalDiscount')
   @ApiBearerAuth()
   @ApiOperation({ summary: '추가할인 등록' })
   @ApiResponse({
@@ -524,7 +524,7 @@ export class AgencyController {
     return this.agencyService.addAdditionalDiscount(dto, agency);
   }
 
-  @Patch('additional-discount')
+  @Patch('updateAdditionalDiscount')
   @ApiBearerAuth()
   @ApiOperation({ summary: '추가할인 수정' })
   @ApiResponse({
@@ -543,7 +543,7 @@ export class AgencyController {
     return this.agencyService.updateAdditionalDiscount(dto, agency);
   }
 
-  @Delete('additional-discount')
+  @Delete('deleteAdditionalDiscount')
   @ApiBearerAuth()
   @ApiOperation({ summary: '추가할인 삭제 (소프트 삭제)' })
   @ApiResponse({
