@@ -171,7 +171,7 @@ export class UserController {
     return this.userService.getSubsidy(dto);
   }
 
-  @Get('additional-discounts')
+  @Get('getAdditionalDiscounts')
   @ApiOperation({ summary: '추가할인 목록 조회' })
   @ApiResponse({
     status: 200,
