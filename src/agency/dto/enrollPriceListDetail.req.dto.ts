@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class enrollPriceListDetailReqDto {
   @IsString()
@@ -31,4 +31,13 @@ export class enrollPriceListDetailReqDto {
   @IsNotEmpty()
   @ApiProperty({ description: '추가지원금', example: 300000 })
   subsidy_by_agency: number;
+
+  @IsArray()
+  @IsOptional()
+  @ApiProperty({
+    description: '추가할인 목록',
+    example: [{ name: '신규가입할인', price: 50000 }],
+    required: false,
+  })
+  additionalDiscounts?: { name: string; price: number }[];
 }

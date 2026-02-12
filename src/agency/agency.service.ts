@@ -163,6 +163,8 @@ export class AgencyService {
     agencyEntity.image_URL = '';
     agencyEntity.delete_time = '';
     agencyEntity.auth_tag = true;
+    agencyEntity.latitude = 0;
+    agencyEntity.longitude = 0;
     await this.agencyRepository.save(agencyEntity);
 
     const response = new agencyLoginResDto();
@@ -1126,6 +1128,35 @@ export class AgencyService {
 
       await this.priceListRepository.save(priceListForSearch);
       response.priceListId = priceListForSearch.id;
+    }
+
+    // [추가 할인 목록 저장 로직]
+    if (dto.additionalDiscounts) {
+      const priceListId = response.priceListId;
+      if (priceListId) {
+        // 1. 해당 PriceList의 기존 할인 모두 소프트 삭제
+        const existingDiscounts = await this.additionalDiscountRepository.find({
+          where: { priceList: { id: priceListId }, delete_time: '' },
+        });
+        
+        for (const discount of existingDiscounts) {
+          discount.delete_time = new Date().toISOString();
+          await this.additionalDiscountRepository.save(discount);
+        }
+
+        const priceList = await this.priceListRepository.findOne({ where: { id: priceListId } });
+        if (!priceList) throw new NotFoundException('PriceList not found');
+
+        // 2. 새로운 할인 목록 저장
+        for (const discountItem of dto.additionalDiscounts) {
+          const newDiscount = new AdditionalDiscount();
+          newDiscount.name = discountItem.name;
+          newDiscount.price = discountItem.price;
+          newDiscount.priceList = priceList;
+          newDiscount.delete_time = '';
+          await this.additionalDiscountRepository.save(newDiscount);
+        }
+      }
     }
 
     return response;
