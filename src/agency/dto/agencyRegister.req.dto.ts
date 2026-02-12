@@ -29,14 +29,6 @@ export class agencyRegisterReqDto {
   @IsString()
   @IsNotEmpty()
   @ApiProperty({
-    description: '계약된 대리점 명',
-    example: 'SKT 대리점 가야점',
-  })
-  seller_name: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
     description: '판매점 주소',
     example: '부산광역시 가야동',
   })
@@ -57,20 +49,4 @@ export class agencyRegisterReqDto {
     example: 'agency1@example.com',
   })
   email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: '오픈 시간',
-    example: '11:00',
-  })
-  start_time: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    description: '클로즈 시간',
-    example: '19:00',
-  })
-  end_time: string;
 }

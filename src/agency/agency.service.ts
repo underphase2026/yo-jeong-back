@@ -155,8 +155,8 @@ export class AgencyService {
     // agencyEntity.seller = seller;
     agencyEntity.address = dto.address;
     agencyEntity.phone_number = dto.phone_number;
-    agencyEntity.start_time = dto.start_time;
-    agencyEntity.end_time = dto.end_time;
+    agencyEntity.start_time = '09:00';
+    agencyEntity.end_time = '20:00';
     agencyEntity.review_score = 5.0;
     agencyEntity.reviews = 0;
     agencyEntity.email = dto.email;
