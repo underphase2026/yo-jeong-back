@@ -577,11 +577,12 @@ export class UserService {
       relations: ['priceList'], // 필요시 관계 로드
     });
 
-    // 3. AdditionalDiscountItem으로 변환 (한글 필드명 사용)
+    // 3. AdditionalDiscountItem으로 변환
     const discountItems = discounts.map((discount) => {
       const item = new AdditionalDiscountItem();
-      item['추가 할인 명'] = discount.name;
-      item['가격'] = discount.price;
+      item.id = discount.id;
+      item.name = discount.name;
+      item.price = discount.price;
       return item;
     });
 
