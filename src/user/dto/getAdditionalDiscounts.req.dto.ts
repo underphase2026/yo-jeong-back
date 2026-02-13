@@ -17,5 +17,5 @@ export class getAdditionalDiscountsReqDto {
     example: 1,
     required: false,
   })
-  priceListId?: number;
+  priceListId: number;
 }
