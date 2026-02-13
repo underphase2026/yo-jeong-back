@@ -1551,7 +1551,7 @@ export class AgencyService {
     if (!discount) throw new NotFoundException('추가할인을 찾을 수 없습니다.');
 
     // 3. 권한 및 정합성 검증
-    if (discount.priceList.id !== dto.priceListId) {
+    if (dto.priceListId !== 0 && discount.priceList.id !== dto.priceListId) {
       throw new BadRequestException('해당 추가할인은 요청한 가격표에 속하지 않습니다.');
     }
     if (discount.priceList.agency.id !== agencyForSearch.id) {
@@ -1592,7 +1592,7 @@ export class AgencyService {
     if (!discount) throw new NotFoundException('추가할인을 찾을 수 없습니다.');
 
     // 3. 권한 및 정합성 검증
-    if (discount.priceList.id !== dto.priceListId) {
+    if (dto.priceListId !== 0 && discount.priceList.id !== dto.priceListId) {
       throw new BadRequestException('해당 추가할인은 요청한 가격표에 속하지 않습니다.');
     }
     if (discount.priceList.agency.id !== agencyForSearch.id) {
